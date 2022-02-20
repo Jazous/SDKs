@@ -1,13 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using SDKs.Dji;
-
-Console.WriteLine("Hello, World!");
+using SDKs;
 
 byte[] data = System.IO.File.ReadAllBytes("D://DJI_0001_R.JPG");
-using (DjiThermal dji = new DjiThermal())
+using (var sdk = new SDKs.Dji.DjiThermal())
 {
-    if (dji.Analysis(data))
+    if (sdk.Analysis(data))
     {
-        var tm = dji.GetTemp();
+        var temp = sdk.GetTemp();
+        Console.WriteLine($"min-temp:{temp.MinTemp}; max-temp:{temp.MaxTemp}");
     }
 }
