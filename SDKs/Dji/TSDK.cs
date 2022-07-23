@@ -2,76 +2,54 @@
 
 static class TSDK
 {
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_create_from_rjpeg(byte[] data, int size, ref IntPtr ph);
+    static readonly bool isLinux;
+    static TSDK()
+    {
+        isLinux = OperatingSystem.IsLinux();
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_get_rjpeg_version(IntPtr h, ref dirp_rjpeg_version_t version);
+    public static int dirp_create_from_rjpeg(byte[] data, int size, ref IntPtr ph)
+    {
+        return isLinux ? TSDK_Linux.dirp_create_from_rjpeg(data, size, ref ph) : TSDK_Windows.dirp_create_from_rjpeg(data, size, ref ph);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_get_rjpeg_resolution(IntPtr h, ref dirp_resolution_t resolution);
+    public static int dirp_get_rjpeg_version(IntPtr h, ref dirp_rjpeg_version_t version)
+    {
+        return isLinux ? TSDK_Linux.dirp_get_rjpeg_version(h, ref version) : TSDK_Windows.dirp_get_rjpeg_version(h, ref version);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_get_original_raw(IntPtr h, byte[] raw_image, int size);
+    public static int dirp_get_rjpeg_resolution(IntPtr h, ref dirp_resolution_t resolution)
+    {
+        return isLinux ? TSDK_Linux.dirp_get_rjpeg_resolution(h, ref resolution) : TSDK_Windows.dirp_get_rjpeg_resolution(h, ref resolution);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_measure(IntPtr h, byte[] temp_image, int size);
+    public static int dirp_get_original_raw(IntPtr h, byte[] raw_image, int size)
+    {
+        return isLinux ? TSDK_Linux.dirp_get_original_raw(h, raw_image, size) : TSDK_Windows.dirp_get_original_raw(h, raw_image, size);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_measure_ex(IntPtr h, byte[] temp_image, int size);
+    public static int dirp_measure(IntPtr h, byte[] temp_image, int size)
+    {
+        return isLinux ? TSDK_Linux.dirp_measure(h, temp_image, size) : TSDK_Windows.dirp_measure(h, temp_image, size);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_get_measurement_params(IntPtr h, ref MeasureParams measurement_params);
+    public static int dirp_measure_ex(IntPtr h, byte[] temp_image, int size)
+    {
+        return isLinux ? TSDK_Linux.dirp_measure_ex(h, temp_image, size) : TSDK_Windows.dirp_measure_ex(h, temp_image, size);
+    }
 
-    [System.Runtime.InteropServices.DllImport("libdirp.dll", CallingConvention = System.Runtime.InteropServices.CallingConvention.Cdecl)]
-    public extern static int dirp_destroy(IntPtr h);
-}
+    public static int dirp_get_measurement_params(IntPtr h, ref dirp_measurement_params_t measurement_params)
+    {
+        return isLinux ? TSDK_Linux.dirp_get_measurement_params(h, ref measurement_params) : TSDK_Windows.dirp_get_measurement_params(h, ref measurement_params);
+    }
 
-struct dirp_resolution_t
-{
-    /// <summary>
-    /// Horizontal size
-    /// </summary>
-    public int width;
-    /// <summary>
-    /// Vertical size
-    /// </summary>
-    public int height;
-}
-struct dirp_rjpeg_version_t
-{
-    /// <summary>
-    /// Version number of the opened R-JPEG itself.
-    /// </summary>
-    int rjpeg;
-    /// <summary>
-    /// Version number of the header data in R-JPEG
-    /// </summary>
-    int header;
-    /// <summary>
-    /// Version number of the curve LUT data in R-JPEG
-    /// </summary>
-    int curve;
-}
-/// <summary>
-/// Temperature measurement parameters.
-/// </summary>
-public struct MeasureParams
-{
-    /// <summary>
-    /// 距离。[1^25] 米
-    /// </summary>
-    public float Distance;
-    /// <summary>
-    /// 空气湿度。[20^100]%
-    /// </summary>
-    public float Humidity;
-    /// <summary>
-    /// 发射率。[0.10^1.00]
-    /// </summary>
-    public float Emissivity;
-    /// <summary>
-    /// 反射温度。[-40.0~500.0]
-    /// </summary>
-    public float Reflection;
+    public static int dirp_get_measurement_params_range(IntPtr h, ref dirp_measurement_params_range_t params_range)
+    {
+        return isLinux ? TSDK_Linux.dirp_get_measurement_params_range(h, ref params_range) : TSDK_Windows.dirp_get_measurement_params_range(h, ref params_range);
+    }
+
+    public static int dirp_destroy(IntPtr h)
+    {
+        return isLinux ? TSDK_Linux.dirp_destroy(h) : TSDK_Windows.dirp_destroy(h);
+    }
 }

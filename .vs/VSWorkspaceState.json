@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\SDKs\\Dji"
   ],
-  "SelectedNode": "\\D:\\data\\github\\SDKs",
+  "SelectedNode": "\\SDKs.sln",
   "PreviewInSolutionExplorer": false
 }
