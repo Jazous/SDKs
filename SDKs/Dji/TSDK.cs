@@ -33,19 +33,9 @@ static class TSDK
         return isLinux ? TSDK_Linux.dirp_measure(h, temp_image, size) : TSDK_Windows.dirp_measure(h, temp_image, size);
     }
 
-    public static int dirp_measure_ex(IntPtr h, byte[] temp_image, int size)
-    {
-        return isLinux ? TSDK_Linux.dirp_measure_ex(h, temp_image, size) : TSDK_Windows.dirp_measure_ex(h, temp_image, size);
-    }
-
     public static int dirp_get_measurement_params(IntPtr h, ref dirp_measurement_params_t measurement_params)
     {
         return isLinux ? TSDK_Linux.dirp_get_measurement_params(h, ref measurement_params) : TSDK_Windows.dirp_get_measurement_params(h, ref measurement_params);
-    }
-
-    public static int dirp_get_measurement_params_range(IntPtr h, ref dirp_measurement_params_range_t params_range)
-    {
-        return isLinux ? TSDK_Linux.dirp_get_measurement_params_range(h, ref params_range) : TSDK_Windows.dirp_get_measurement_params_range(h, ref params_range);
     }
 
     public static int dirp_destroy(IntPtr h)

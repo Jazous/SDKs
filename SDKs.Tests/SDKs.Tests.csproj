@@ -8,13 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="DJI_0001_R.JPG" />
+    <None Remove="2.JPG" />
     <None Remove="libv_girp.dll" />
     <None Remove="libv_girp.so" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="DJI_0001_R.JPG">
+    <Content Include="2.JPG">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="libdirp.dll">

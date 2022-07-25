@@ -1,4 +1,4 @@
-﻿namespace SDKs.Thermals;
+﻿namespace SDKs.Dji;
 
 public struct TArea
 {
