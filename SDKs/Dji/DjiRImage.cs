@@ -1,14 +1,17 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SDKs.Dji;
 
 /// <summary>
-/// 大疆 R-JPEG
+/// 大疆 R-JPEG 热红外照片
 /// </summary>
+/// <remarks>支持：禅思 H20N、禅思 Zenmuse XT S、禅思 Zenmuse H20 系列、经纬 M30 系列、御 2 行业进阶版</remarks>
 public sealed class DjiRImage : IDisposable
 {
     IntPtr _ph = IntPtr.Zero;
     decimal[,] mData = null;
+    static readonly Regex _regex = new Regex("<rdf:Description", RegexOptions.Multiline);
 
     /// <summary>
     /// 图像宽度
@@ -39,14 +42,13 @@ public sealed class DjiRImage : IDisposable
     /// </summary>
     public int Size { get; private set; }
     /// <summary>
-    /// Rdf:Description 属性
+    /// Rdf:Description 属性，没有该节点时返回 RdfInfo.Empty
     /// </summary>
     public RdfInfo Rdfs { get; set; }
     /// <summary>
     /// 图像 EXIF 信息
     /// </summary>
     public RExifInfo Exifs { get; set; }
-
     private DjiRImage()
     {
     }
@@ -89,7 +91,7 @@ public sealed class DjiRImage : IDisposable
         int code = img.Load(buffer);
         if (code == 0)
         {
-            img.Rdfs = GetRdf(System.Text.Encoding.ASCII.GetString(buffer));
+            img.Rdfs = GetRdf(buffer);
             stream.Position = 0;
             img.Exifs = GetExif(stream);
             return img;
@@ -114,7 +116,7 @@ public sealed class DjiRImage : IDisposable
         int code = img.Load(bytes);
         if (code == 0)
         {
-            img.Rdfs = GetRdf(System.Text.Encoding.ASCII.GetString(bytes));
+            img.Rdfs = GetRdf(bytes);
             using (var ms = new MemoryStream(bytes))
                 img.Exifs = GetExif(ms);
             return img;
@@ -122,10 +124,10 @@ public sealed class DjiRImage : IDisposable
         img.Dispose();
         throw new InvalidDataException(((dirp_ret_code_e)code).ToString());
     }
-    int Load(byte[] rjpgData)
+    int Load(byte[] bytes)
     {
-        Size = rjpgData.Length;
-        int code = TSDK.dirp_create_from_rjpeg(rjpgData, rjpgData.Length, ref _ph);
+        Size = bytes.Length;
+        int code = TSDK.dirp_create_from_rjpeg(bytes, Size, ref _ph);
         if (code == 0)
         {
             dirp_resolution_t res = new dirp_resolution_t();
@@ -155,7 +157,7 @@ public sealed class DjiRImage : IDisposable
     /// <returns></returns>
     public TArea GetTemp()
     {
-        return GetTempRect(0, 0, Width - 1, Height - 1).Value;
+        return GetTempRect(0, 0, Width - 1, Height - 1);
     }
     /// <summary>
     /// 获取图片指定位置的温度
@@ -163,7 +165,7 @@ public sealed class DjiRImage : IDisposable
     /// <param name="x"></param>
     /// <param name="y"></param>
     /// <returns></returns>
-    public decimal? GetTempP(int x, int y)
+    public decimal? GetTemp(int x, int y)
     {
         if (mData == null || mData.Length == 0)
             return null;
@@ -180,14 +182,16 @@ public sealed class DjiRImage : IDisposable
     /// <param name="x2"></param>
     /// <param name="y2"></param>
     /// <returns></returns>
-    public TArea? GetTempLine(int x1, int y1, int x2, int y2)
+    public TArea GetTempLine(int x1, int y1, int x2, int y2)
     {
-        if (mData == null || mData.Length == 0)
-            return null;
-        if (x1 < 0 || x1 > Width - 1 || x2 < 0 || x2 > Width - 1)
-            return null;
-        if (y1 < 0 || y1 > Height - 1 || y2 < 0 || y2 > Height - 1)
-            return null;
+        if (x1 < 0 || x1 > this.Width - 1)
+            throw new ArgumentOutOfRangeException(nameof(x1));
+        if (y1 < 0 || y1 > this.Height - 1)
+            throw new ArgumentOutOfRangeException(nameof(y1));
+        if (x2 < 0 || x2 > this.Width - 1)
+            throw new ArgumentOutOfRangeException(nameof(x2));
+        if (y2 < 0 || y2 > this.Height - 1)
+            throw new ArgumentOutOfRangeException(nameof(y2));
 
         var result = new TArea();
         int xoffset = x2 - x1;
@@ -295,19 +299,19 @@ public sealed class DjiRImage : IDisposable
     /// <param name="width"></param>
     /// <param name="height"></param>
     /// <returns></returns>
-    public TArea? GetTempRect(int x, int y, int width, int height)
+    public TArea GetTempRect(int x, int y, int width, int height)
     {
-        if (mData == null || mData.Length == 0)
-            return null;
+        if (x < 0 || x > this.Width-1)
+            throw new ArgumentOutOfRangeException(nameof(x));
+        if (y < 0 || y > this.Height - 1)
+            throw new ArgumentOutOfRangeException(nameof(y));
+        if (width < 0 || x + width > this.Width - 1)
+            throw new ArgumentOutOfRangeException(nameof(width));
+        if (height < 0 || y + height > this.Height - 1)
+            throw new ArgumentOutOfRangeException(nameof(height));
 
         if (width == 0 || height == 0)
             return GetTempLine(x, y, x + width, y + height);
-
-        if (x < 0 || width < 0 || y < 0 || height < 0)
-            return null;
-
-        if (x + width > Width - 1 || y + height > Height - 1)
-            return null;
 
         decimal temp = mData[x, y];
         var result = new TArea();
@@ -347,25 +351,49 @@ public sealed class DjiRImage : IDisposable
         result.AvgTemp = Math.Round(tempArray.Average(), 2);
         return result;
     }
-    static RdfInfo GetRdf(string text)
+    static string GetStr(byte[] bytes, int sIndex, int ncount)
     {
-        RdfInfo meta = new RdfInfo();
+        string str = System.Text.Encoding.ASCII.GetString(bytes, sIndex, ncount);
+        var match = _regex.Match(str);
+        int tmpIndex = match.Index;
+        if (match.Success)
+        {
+            if (tmpIndex + 0xa00 < ncount)
+                return str.Substring(tmpIndex, 0xa00);
+
+            return System.Text.Encoding.ASCII.GetString(bytes, sIndex + tmpIndex, ncount >= 0xa00 ? 0xa00 : ncount);
+        }
+
+        int nextIndex = sIndex + ncount - 0x20;
+        int nextcount = bytes.Length - nextIndex;
+        if (nextcount <= 0x100)
+            return string.Empty;
+
+        if (nextcount > ncount)
+            nextcount = ncount;
+
+        return GetStr(bytes, nextIndex, nextcount);
+    }
+    static RdfInfo GetRdf(byte[] bytes)
+    {
+        string text = GetStr(bytes, 0, bytes.Length > 0x2800 ? 0x2800 : bytes.Length);
+
         string numpattern = "[\"][-+]*\\d+[.\\d+]*[\"]";
         var match = Regex.Match(text, "<rdf:Description[\\s\\S]+</rdf:Description>", RegexOptions.Multiline);
         if (!match.Success)
-            return meta;
+            return RdfInfo.Empty;
 
-
+        RdfInfo meta = new RdfInfo();
         var mc = Regex.Match(match.Value, $"drone-dji:Version=[\"][\\d]+[.\\d]*[\"]");
         if (mc.Success)
         {
-            text = mc.Value.Split('=')[1].Trim('"').Trim('+');
+            text = mc.Value.Split('=')[1].Trim('"');
             meta.Version = text;
         }
         mc = Regex.Match(match.Value, $"drone-dji:GpsStatus=[\"][\\w]+[\"]");
         if (mc.Success)
         {
-            text = mc.Value.Split('=')[1].Trim('"').Trim('+');
+            text = mc.Value.Split('=')[1].Trim('"');
             meta.GpsStatus = text;
         }
         mc = Regex.Match(match.Value, $"drone-dji:GpsLatitude={numpattern}");
@@ -465,7 +493,6 @@ public sealed class DjiRImage : IDisposable
         string str;
         double[] dbArr;
         double db;
-        DateTime dt;
         ushort ust;
         byte[] bArr;
         var exifs = new RExifInfo();
@@ -475,8 +502,8 @@ public sealed class DjiRImage : IDisposable
                 exifs.Make = str;
             if (reader.GetTagValue(ExifLib.ExifTags.Model, out str))
                 exifs.Model = str;
-            if (reader.GetTagValue(ExifLib.ExifTags.DateTime, out dt))
-                exifs.DateTime = dt;
+            if (reader.GetTagValue(ExifLib.ExifTags.DateTime, out str))
+                exifs.DateTime = DateTime.ParseExact(str, new string[] { "yyyy-MM-dd HH:mm:ss", "yyyy:MM:dd HH:mm:ss"}, DateTimeFormatInfo.CurrentInfo, DateTimeStyles.None);
             if (reader.GetTagValue(ExifLib.ExifTags.FocalLength, out db))
                 exifs.FocalLength = Convert.ToInt32(db);
             if (reader.GetTagValue(ExifLib.ExifTags.FocalLengthIn35mmFilm, out ust))

@@ -3,10 +3,13 @@
 namespace SDKs.Dji
 {
     /// <summary>
-    /// 大疆 XMP Meta drone-dji 信息
+    /// 大疆 XMP Meta drone-dji 信息。
     /// </summary>
+    /// <remarks>经纬度坐标为 WGS-84 标准。</remarks>
     public struct RdfInfo
     {
+        public static readonly RdfInfo Empty = new RdfInfo();
+
         /// <summary>
         /// 版本
         /// </summary>
@@ -28,7 +31,7 @@ namespace SDKs.Dji
         [XmlAttribute("drone-dji:GpsLongitude")]
         public decimal GpsLongitude { get; set; }
         /// <summary>
-        /// 绝对高度。WGS84 标准
+        /// 绝对高度。
         /// </summary>
         [XmlAttribute("drone-dji:AbsoluteAltitude")]
         public decimal AbsoluteAltitude { get; set; }
