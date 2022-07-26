@@ -7,4 +7,5 @@
 /SDKs/obj
 /SDKs.Tests/obj
 /SDKs.Tests/bin
+/.vs
 *.user
