@@ -15,5 +15,5 @@ using (var img = DjiRImage.FromBytes(data))
     Console.WriteLine($"云台偏航角:{img.Rdfs.GimbalYawDegree}; \t\t 云台俯仰角:{img.Rdfs.GimbalPitchDegree}; \t\t 云台翻滚角:{img.Rdfs.GimbalRollDegree}");
     Console.WriteLine($"经度:{img.Rdfs.GpsLongitude}; \t\t 纬度:{img.Rdfs.GpsLatitude}; \t\t 海拔:{img.Rdfs.AbsoluteAltitude}");
 }
-Console.ReadKey();}
+Console.ReadKey();
 ```
